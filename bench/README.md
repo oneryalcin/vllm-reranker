@@ -20,6 +20,8 @@ uv run \
 
 This produces a JSON payload with `cases`, each containing a query and mixed positive/negative documents. Adjust `--dataset` (e.g. `nq`, `trec-covid`, `fiqa`) and the limits as needed. For quick smoke tests, reduce `--limit` or `--top-k`.
 
+If the dataset is missing locally, the script automatically downloads it into `./beir/<dataset>` using the official BEIR host.
+
 ## 2. Measure throughput against the server
 
 ```bash

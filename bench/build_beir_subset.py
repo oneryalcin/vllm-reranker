@@ -5,6 +5,7 @@ import random
 from typing import Dict, List, Set
 
 from beir.datasets.data_loader import GenericDataLoader
+from beir.util import download_and_unzip
 from tqdm import tqdm
 
 
@@ -33,7 +34,15 @@ def main() -> None:
 
     random.seed(args.seed)
 
-    dataset_path = f"beir/{args.dataset}"
+    base_dir = "beir"
+    dataset_path = os.path.join(base_dir, args.dataset)
+    corpus_file = os.path.join(dataset_path, "corpus.jsonl")
+
+    if not os.path.exists(corpus_file):
+        os.makedirs(base_dir, exist_ok=True)
+        url = f"https://public.ukp.informatik.tu-darmstadt.de/thakur/BEIR/datasets/{args.dataset}.zip"
+        print(f"Dataset not found locally. Downloading from {url} ...")
+        download_and_unzip(url, base_dir)
     corpus, queries, qrels = GenericDataLoader(dataset_path).load(split=args.split)
     corpus_ids = list(corpus.keys())
 
@@ -77,4 +86,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
