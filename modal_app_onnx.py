@@ -5,8 +5,12 @@ from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
 import modal
 
-if TYPE_CHECKING:
+try:  # FastAPI may not be installed in local dev environment
     from fastapi import Request
+except ImportError:  # pragma: no cover
+    class Request:  # type: ignore
+        """Fallback placeholder so type annotations still work locally."""
+        pass
 
 MODEL_ID = "mixedbread-ai/mxbai-rerank-base-v2"
 ONNX_DIR = Path("/root/onnx")
