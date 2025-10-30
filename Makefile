@@ -17,6 +17,19 @@ BENCH_SPLIT ?= test
 BENCH_LIMIT ?= 100
 BENCH_TOP_K ?= 20
 BENCH_NEG ?= 20
+BENCH_METRICS ?= 0
+BENCH_METRICS_INTERVAL ?= 1.0
+BENCH_METRICS_URL ?=
+
+ifeq ($(filter 1 true,$(BENCH_METRICS)),)
+BENCH_METRIC_FLAGS :=
+else
+BENCH_METRIC_FLAGS := --metrics --metrics-interval $(BENCH_METRICS_INTERVAL)
+endif
+
+ifneq ($(strip $(BENCH_METRICS_URL)),)
+BENCH_METRIC_FLAGS += --metrics-url $(BENCH_METRICS_URL)
+endif
 
 # vLLM reranker hf_overrides mapping required for Mixedbread v2
 HF_OVERRIDES := '{"architectures":["Qwen2ForSequenceClassification"],"classifier_from_token":["0","1"],"method":"from_2_way_softmax"}'
@@ -143,4 +156,4 @@ bench-run:
 	  --cases-file $(BENCH_FILE) \
 	  --url $(BENCH_URL) \
 	  --concurrency $(CONCURRENCY) \
-	  --batch-size $(BATCH_SIZE)
+	  --batch-size $(BATCH_SIZE) $(BENCH_METRIC_FLAGS)

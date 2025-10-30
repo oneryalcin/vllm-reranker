@@ -88,6 +88,7 @@ Make targets (shortcut)
  - CPU only: `make local-run-cpu` (sets OMP threads)
 - Build BEIR subset: `make bench-build BENCH_DATASET=scifact BENCH_LIMIT=100`
 - Benchmark endpoint: `make bench-run BENCH_URL=https://<modal-url> CONCURRENCY=16`
+  - Capture GPU metrics: add `BENCH_METRICS=1` (optionally set `BENCH_METRICS_URL`)
 
 macOS notes
 - Apple Silicon GPUs are usable via PyTorch MPS; performance is decent for small batches.

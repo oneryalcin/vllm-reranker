@@ -29,10 +29,11 @@ uv run --with httpx python bench/bench_rerank_async.py \
   --cases-file data/bench/scifact_rerank.json \
   --url https://<modal-or-local-url> \
   --concurrency 16 \
-  --batch-size 1
+  --batch-size 1 \
+  --metrics --metrics-interval 1.0
 ```
 
-The script prints aggregate latency statistics and requests-per-second. Increase `--concurrency` to probe server capacity; increase `--batch-size` to reuse connections for multiple requests per coroutine.
+The script prints aggregate latency statistics and requests-per-second. Increase `--concurrency` to probe server capacity; increase `--batch-size` to reuse connections for multiple requests per coroutine. Use `--metrics` to poll `/metrics` concurrently and summarize GPU utilization (avg/peak) and memory usage. Provide `--metrics-url` if the metrics endpoint lives elsewhere.
 
 ## 3. Compare local vs server
 
