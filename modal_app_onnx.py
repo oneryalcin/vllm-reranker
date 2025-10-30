@@ -53,6 +53,7 @@ app = modal.App("mxbai-rerank-onnx-cpu")
     min_containers=0,
     buffer_containers=1,
     scaledown_window=300,
+    concurrency_limit=8,
 )
 class OnnxRerankService:
     @modal.enter()
@@ -61,8 +62,7 @@ class OnnxRerankService:
 
         self.reranker = OnnxReranker(ONNX_DIR, ONNX_MODEL)
 
-    @modal.web_endpoint(method="POST")
-    @modal.concurrent(max_inputs=8, target_inputs=6)
+    @modal.fastapi_endpoint(method="POST")
     def rerank(self, request):
         from src.onnx_reranker import RerankRequest
 
@@ -75,6 +75,6 @@ class OnnxRerankService:
         )
         return {"results": self.reranker.rerank(payload)}
 
-    @modal.web_endpoint(method="GET")
+    @modal.fastapi_endpoint(method="GET")
     def health(self):
         return {"status": "ok"}
