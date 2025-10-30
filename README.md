@@ -94,9 +94,10 @@ Modal Deployment
 This repo includes a Modal app (`modal_app.py`) aligned with `docs/vllm_modal.md` patterns:
 - Uses `@modal.web_server` to launch vLLM once per container and serve OpenAI-compatible endpoints.
 - Mounts two volumes for caches: `/root/.cache/huggingface` and `/root/.cache/vllm` (faster cold starts).
-- Provides a `FAST_BOOT` toggle to trade cold-start speed vs max throughput (`--enforce-eager`).
+- Provides a `FAST_BOOT` toggle to trade cold-start speed vs max throughput (`--enforce-eager`). Default is `FAST_BOOT=false` for better steady-state performance; set `FAST_BOOT=true` in the environment for quicker dev spins.
 - Sets `--task score` and the required `--hf-overrides` for Mixedbread’s reranker.
 - Builds the image with `Image.uv_pip_install(...)` (recommended) and pins `vllm==0.11.0`, `torch==2.8.0`, `huggingface_hub[hf_transfer]==0.35.0`, and `flashinfer-python==0.3.1`.
+- Sets `TORCH_CUDA_ARCH_LIST=89` in the container to target NVIDIA L4 GPUs and speed compilation.
 - Pre-downloads weights during image build (via `Image.run_function(preload_model, volumes=...)`) into the HF cache volume to minimize first-cold-start latency.
 
 Deploy
@@ -111,15 +112,16 @@ Deploy
 No CLI? Use uvx
 - Dev (hot-reload): `uvx modal serve modal_app.py`
 - Production: `uvx modal deploy modal_app.py`
+- Toggle cold-start vs throughput: `FAST_BOOT=true uvx modal serve modal_app.py`
 
 Call the deployed endpoint
 - Use the printed URL with the client:  
   `uv run python src/client_vllm_rerank.py --url https://<your-app>.modal.run --query "what is vLLM?" --docs-file data/example_docs.json --top-k 3 --model-id mixedbread-ai/mxbai-rerank-base-v2`
 
 Tweaks
-- GPU type via `gpu=f"A10G:1"` (change to `H100:1` for best perf).
+- GPU type via `gpu=f"L4:1"` (update if you prefer another SKU, e.g. `H100:1`).
 - Concurrency via `@modal.concurrent(max_inputs=...)` (start 16–64 depending on batch size & latency goals).
-- Set `FAST_BOOT=False` if replicas stay warm to enable Torch compilation/CUDA graphs for more throughput.
+- Set `FAST_BOOT=false` (default) to enable Torch compilation/CUDA graphs once warm; use `FAST_BOOT=true` for faster cold starts during dev.
 - Optionally pre-download weights into a Modal Volume or during image build (advanced; not required for this public model).
 - If you change vLLM or CUDA, keep dependencies pinned; the Modal image uses `uv` to install packages.
 - Switch model size: edit `MODEL_ID` in `modal_app.py` to `mixedbread-ai/mxbai-rerank-large-v2`, or set `MODEL_ID` env and rebuild.

@@ -1,3 +1,4 @@
+import os
 import modal
 
 # Modalized vLLM server for Mixedbread reranker.
@@ -6,7 +7,8 @@ import modal
 MODEL_ID = "mixedbread-ai/mxbai-rerank-base-v2"
 N_GPU = 1
 VLLM_PORT = 8000
-FAST_BOOT = True  # trade fast cold starts vs. max throughput
+# Default to False for better steady-state throughput (enables compilation + cudagraphs).
+FAST_BOOT = os.environ.get("FAST_BOOT", "false").lower() == "true"
 
 # Caches to speed up cold starts
 hf_cache_vol = modal.Volume.from_name("huggingface-cache", create_if_missing=True)
@@ -34,6 +36,7 @@ image = (
     .env({
         "HF_HUB_ENABLE_HF_TRANSFER": "1",
         "MODEL_ID": MODEL_ID,
+        "TORCH_CUDA_ARCH_LIST": "89",
     })
     .run_function(
         preload_model,
