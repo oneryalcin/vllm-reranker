@@ -1,0 +1,10 @@
+{
+  "documents": [
+    "vLLM is a fast and cheap LLM inference engine for serving and batching.",
+    "The reranker cross-encoder scores query-document pairs and sorts documents by relevance.",
+    "Mixedbread provides embedding and reranking models including mxbai-rerank-base-v2.",
+    "Transformers provides utilities for text and sequence classification with pretrained models.",
+    "Modal is a serverless GPU platform that can run vLLM as a service."
+  ]
+}
+
