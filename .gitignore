@@ -16,6 +16,7 @@ venv/
 # Hugging Face / caches
 /.cache/
 /data/*.md
+data/bench/
 
 # Modal volumes (mounted paths)
 /root/.cache/huggingface/

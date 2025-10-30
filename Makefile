@@ -8,6 +8,15 @@ MODEL ?= mixedbread-ai/mxbai-rerank-base-v2
 GPU ?= all
 DOCS ?= data/hf_harper_lee.json
 QUERY ?= Who wrote 'To Kill a Mockingbird'?
+BENCH_FILE ?= data/bench/scifact_rerank.json
+BENCH_URL ?= http://localhost:8000
+CONCURRENCY ?= 16
+BATCH_SIZE ?= 1
+BENCH_DATASET ?= scifact
+BENCH_SPLIT ?= test
+BENCH_LIMIT ?= 100
+BENCH_TOP_K ?= 20
+BENCH_NEG ?= 20
 
 # vLLM reranker hf_overrides mapping required for Mixedbread v2
 HF_OVERRIDES := '{"architectures":["Qwen2ForSequenceClassification"],"classifier_from_token":["0","1"],"method":"from_2_way_softmax"}'
@@ -26,6 +35,8 @@ help:
 	@echo "  modal-deploy     - Deploy Modal app"
 	@echo "  modal-serve      - Run Modal dev server (requires 'modal' CLI on PATH)"
 	@echo "  modal-serve-uvx  - Run Modal dev server via 'uvx' (no install)"
+	@echo "  bench-build      - Generate BEIR benchmark payload"
+	@echo "  bench-run        - Benchmark rerank endpoint"
 
 .PHONY: vllm-up-docker
 vllm-up-docker:
@@ -113,3 +124,23 @@ modal-serve:
 .PHONY: modal-serve-uvx
 modal-serve-uvx:
 	uvx modal serve modal_app.py
+
+.PHONY: bench-build
+bench-build:
+	uv run --with beir --with datasets --with tqdm \
+	  python bench/build_beir_subset.py \
+	  --dataset $(BENCH_DATASET) \
+	  --split $(BENCH_SPLIT) \
+	  --limit $(BENCH_LIMIT) \
+	  --top-k $(BENCH_TOP_K) \
+	  --negatives $(BENCH_NEG) \
+	  --out $(BENCH_FILE)
+
+.PHONY: bench-run
+bench-run:
+	uv run --with httpx \
+	  python bench/bench_rerank_async.py \
+	  --cases-file $(BENCH_FILE) \
+	  --url $(BENCH_URL) \
+	  --concurrency $(CONCURRENCY) \
+	  --batch-size $(BATCH_SIZE)

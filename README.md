@@ -25,6 +25,7 @@ Quick Start (Local, Python wrapper)
 Relevant sample datasets
 - HF example (Harper Lee): `data/hf_harper_lee.json`
 - Small multi-case set: `data/rerank_samples.json`
+- BEIR workloads: run `make bench-build` to write JSON under `data/bench/` (see `bench/README.md`).
 
 Batch runner
 - `uv run --with mxbai-rerank --with transformers --with torch python src/run_batch.py --cases-file data/rerank_samples.json --model-id mixedbread-ai/mxbai-rerank-base-v2 --quiet`
@@ -85,6 +86,8 @@ Make targets (shortcut)
 - Batch tests: `make batch-run`
  - Apple Silicon GPU: `make local-run-mps` (uses MPS with safe fallback)
  - CPU only: `make local-run-cpu` (sets OMP threads)
+- Build BEIR subset: `make bench-build BENCH_DATASET=scifact BENCH_LIMIT=100`
+- Benchmark endpoint: `make bench-run BENCH_URL=https://<modal-url> CONCURRENCY=16`
 
 macOS notes
 - Apple Silicon GPUs are usable via PyTorch MPS; performance is decent for small batches.
@@ -150,3 +153,4 @@ Files
 - `data/example_docs.json`: Small example document list.
 - `data/hf_harper_lee.json`: HF Harper Lee example passages.
 - `data/rerank_samples.json`: Multilingual, code, and long-context cases.
+- `bench/`: Utilities for generating benchmark datasets (`build_beir_subset.py`), async throughput tester (`bench_rerank_async.py`), docs.
