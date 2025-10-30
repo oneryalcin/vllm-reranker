@@ -1,8 +1,12 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import modal
+
+if TYPE_CHECKING:
+    from fastapi import Request
 
 MODEL_ID = "mixedbread-ai/mxbai-rerank-base-v2"
 ONNX_DIR = Path("/root/onnx")
@@ -65,7 +69,7 @@ class OnnxRerankService:
         self.reranker = OnnxReranker(ONNX_DIR, ONNX_MODEL)
 
     @modal.fastapi_endpoint(method="POST")
-    async def rerank(self, request):
+    async def rerank(self, request: "Request"):
         from src.onnx_reranker import RerankRequest
 
         data = await request.json()
