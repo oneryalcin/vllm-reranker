@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import modal
+from fastapi import Request
 
 MODEL_ID = "mixedbread-ai/mxbai-rerank-base-v2"
 ONNX_DIR = Path("/root/onnx")
@@ -33,6 +34,7 @@ image = (
         "transformers",
         "optimum[onnxruntime]",
         "torch",
+        "fastapi[standard]",
     )
     .add_local_dir("scripts", "/root/app/scripts")
     .add_local_dir("src", "/root/app/src")
@@ -63,10 +65,10 @@ class OnnxRerankService:
         self.reranker = OnnxReranker(ONNX_DIR, ONNX_MODEL)
 
     @modal.fastapi_endpoint(method="POST")
-    def rerank(self, request):
+    async def rerank(self, request: Request):
         from src.onnx_reranker import RerankRequest
 
-        data = request.json
+        data = await request.json()
         payload = RerankRequest(
             query=data["query"],
             documents=data["documents"],
@@ -76,5 +78,5 @@ class OnnxRerankService:
         return {"results": self.reranker.rerank(payload)}
 
     @modal.fastapi_endpoint(method="GET")
-    def health(self):
+    async def health(self):
         return {"status": "ok"}
