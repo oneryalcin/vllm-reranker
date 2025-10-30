@@ -1,5 +1,15 @@
 SHELL := /bin/bash
 MODAL ?= modal
+ifeq ($(MODAL),modal)
+MODAL_BIN := $(shell command -v modal 2>/dev/null)
+ifeq ($(MODAL_BIN),)
+MODAL_CMD := uvx modal
+else
+MODAL_CMD := modal
+endif
+else
+MODAL_CMD := $(MODAL)
+endif
 
 # Config
 PORT ?= 8000
@@ -130,11 +140,11 @@ local-run-cpu:
 
 .PHONY: modal-deploy
 modal-deploy:
-	$(MODAL) deploy modal_app.py
+	$(MODAL_CMD) deploy modal_app.py
 
 .PHONY: modal-serve
 modal-serve:
-	$(MODAL) serve modal_app.py
+	$(MODAL_CMD) serve modal_app.py
 
 .PHONY: modal-serve-uvx
 modal-serve-uvx:
@@ -142,11 +152,11 @@ modal-serve-uvx:
 
 .PHONY: modal-serve-onnx
 modal-serve-onnx:
-	$(MODAL) serve modal_app_onnx.py
+	$(MODAL_CMD) serve modal_app_onnx.py
 
 .PHONY: modal-deploy-onnx
 modal-deploy-onnx:
-	$(MODAL) deploy modal_app_onnx.py
+	$(MODAL_CMD) deploy modal_app_onnx.py
 
 .PHONY: bench-build
 bench-build:
