@@ -1,0 +1,94 @@
+from __future__ import annotations
+
+from pathlib import Path
+from typing import Any, Dict, List, Optional, TYPE_CHECKING
+
+import modal
+
+try:  # FastAPI may not be installed in local dev environment
+    from fastapi import Request
+except ImportError:  # pragma: no cover
+    class Request:  # type: ignore
+        """Fallback placeholder so type annotations still work locally."""
+        pass
+
+MODEL_ID = "mixedbread-ai/mxbai-rerank-base-v2"
+ONNX_DIR = Path("/root/onnx")
+ONNX_MODEL = "model-int8.onnx"
+
+onnx_volume = modal.Volume.from_name("mxbai-rerank-onnx", create_if_missing=True)
+
+
+def build_onnx() -> None:
+    from scripts.export_onnx import export
+    from scripts.quantize_onnx import quantize
+
+    ONNX_DIR.mkdir(parents=True, exist_ok=True)
+    model_fp = ONNX_DIR / "model.onnx"
+    quant_fp = ONNX_DIR / ONNX_MODEL
+
+    if quant_fp.exists():
+        return
+
+    export(MODEL_ID, ONNX_DIR)
+    quantize(model_fp, quant_fp)
+
+
+image = (
+    modal.Image.debian_slim(python_version="3.12")
+    .entrypoint([])
+    .uv_pip_install(
+        "onnxruntime",
+        "transformers",
+        "optimum[onnxruntime]",
+        "torch",
+        "fastapi[standard]",
+    )
+    .add_local_dir("scripts", "/root/app/scripts", copy=True)
+    .add_local_dir("src", "/root/app/src", copy=True)
+    .env({"PYTHONPATH": "/root/app"})
+    .run_function(build_onnx, volumes={str(ONNX_DIR): onnx_volume})
+)
+
+
+app = modal.App("mxbai-rerank-onnx-cpu")
+
+
+@app.cls(
+    image=image,
+    cpu=4.0,
+    memory=4096,
+    volumes={str(ONNX_DIR): onnx_volume},
+    max_containers=20,
+    min_containers=0,
+    buffer_containers=1,
+    scaledown_window=300,
+)
+@modal.concurrent(max_inputs=8, target_inputs=6)
+class OnnxRerankService:
+    @modal.enter()
+    def setup(self):
+        from src.onnx_reranker import OnnxReranker
+
+        self.reranker = OnnxReranker(ONNX_DIR, ONNX_MODEL)
+
+    @modal.fastapi_endpoint(method="POST")
+    async def rerank(self, request: "Request"):
+        from fastapi import Request as FastAPIRequest
+        from src.onnx_reranker import RerankRequest
+
+        if not isinstance(request, FastAPIRequest):
+            request = FastAPIRequest(request.scope, request.receive)
+
+        body: Dict[str, Any] = await request.json()
+        payload = RerankRequest(
+            query=body["query"],
+            documents=body["documents"],
+            top_n=body.get("top_n", 5),
+            instruction=body.get("instruction"),
+        )
+        return {"results": self.reranker.rerank(payload)}
+
+    @modal.fastapi_endpoint(method="GET")
+    async def health(self):
+        return {"status": "ok"}

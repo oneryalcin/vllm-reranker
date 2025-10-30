@@ -1,5 +1,15 @@
 SHELL := /bin/bash
 MODAL ?= modal
+ifeq ($(MODAL),modal)
+MODAL_BIN := $(shell command -v modal 2>/dev/null)
+ifeq ($(MODAL_BIN),)
+MODAL_CMD := uvx modal
+else
+MODAL_CMD := modal
+endif
+else
+MODAL_CMD := $(MODAL)
+endif
 
 # Config
 PORT ?= 8000
@@ -48,6 +58,8 @@ help:
 	@echo "  modal-deploy     - Deploy Modal app"
 	@echo "  modal-serve      - Run Modal dev server (requires 'modal' CLI on PATH)"
 	@echo "  modal-serve-uvx  - Run Modal dev server via 'uvx' (no install)"
+	@echo "  modal-serve-onnx - Run ONNX CPU dev server"
+	@echo "  modal-deploy-onnx- Deploy ONNX CPU app"
 	@echo "  bench-build      - Generate BEIR benchmark payload"
 	@echo "  bench-run        - Benchmark rerank endpoint"
 
@@ -128,15 +140,23 @@ local-run-cpu:
 
 .PHONY: modal-deploy
 modal-deploy:
-	$(MODAL) deploy modal_app.py
+	$(MODAL_CMD) deploy modal_app.py
 
 .PHONY: modal-serve
 modal-serve:
-	$(MODAL) serve modal_app.py
+	$(MODAL_CMD) serve modal_app.py
 
 .PHONY: modal-serve-uvx
 modal-serve-uvx:
 	uvx modal serve modal_app.py
+
+.PHONY: modal-serve-onnx
+modal-serve-onnx:
+	$(MODAL_CMD) serve modal_app_onnx.py
+
+.PHONY: modal-deploy-onnx
+modal-deploy-onnx:
+	$(MODAL_CMD) deploy modal_app_onnx.py
 
 .PHONY: bench-build
 bench-build:
