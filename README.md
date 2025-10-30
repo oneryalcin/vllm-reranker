@@ -74,6 +74,21 @@ ONNX CPU Path
   ```
   Set `--model-file model.onnx` to compare fp16 vs int8 models. Results mirror the JSON structure produced by the local wrapper.
 
+Modal ONNX CPU Deployment
+- Serve the int8 ONNX reranker on Modal (CPU only):
+  - `make modal-serve-onnx` for a dev endpoint (Ctrl+C to stop).  
+    Uses `modal_app_onnx.py`, which builds/quantizes the model once in a Modal volume and serves `/rerank` + `/health`.
+  - `make modal-deploy-onnx` to promote to production.
+- Request format:
+  ```json
+  {
+    "query": "...",
+    "documents": ["..."],
+    "top_n": 5
+  }
+  ```
+  Response mirrors the CLI structure `{ "results": [ ... ] }`.
+
 vLLM Reranker (Local)
 vLLM supports cross-encoder rerankers and exposes `/v1/rerank`. The Mixedbread v2 model requires `--hf-overrides` to map the classifier correctly.
 

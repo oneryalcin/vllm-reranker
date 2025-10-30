@@ -48,6 +48,8 @@ help:
 	@echo "  modal-deploy     - Deploy Modal app"
 	@echo "  modal-serve      - Run Modal dev server (requires 'modal' CLI on PATH)"
 	@echo "  modal-serve-uvx  - Run Modal dev server via 'uvx' (no install)"
+	@echo "  modal-serve-onnx - Run ONNX CPU dev server"
+	@echo "  modal-deploy-onnx- Deploy ONNX CPU app"
 	@echo "  bench-build      - Generate BEIR benchmark payload"
 	@echo "  bench-run        - Benchmark rerank endpoint"
 
@@ -137,6 +139,14 @@ modal-serve:
 .PHONY: modal-serve-uvx
 modal-serve-uvx:
 	uvx modal serve modal_app.py
+
+.PHONY: modal-serve-onnx
+modal-serve-onnx:
+	$(MODAL) serve modal_app_onnx.py
+
+.PHONY: modal-deploy-onnx
+modal-deploy-onnx:
+	$(MODAL) deploy modal_app_onnx.py
 
 .PHONY: bench-build
 bench-build:
