@@ -46,8 +46,8 @@ app = modal.App("mxbai-rerank-onnx-cpu")
 
 @app.cls(
     image=image,
-    cpu=modal.Cpu(4),
-    memory=modal.Memory.GB(4),
+    cpu=4.0,
+    memory=4096,
     volumes={str(ONNX_DIR): onnx_volume},
     max_containers=20,
     min_containers=0,
