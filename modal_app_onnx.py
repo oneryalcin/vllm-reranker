@@ -44,45 +44,37 @@ image = (
 app = modal.App("mxbai-rerank-onnx-cpu")
 
 
-_reranker = None
-
-
-def _load_reranker():
-    global _reranker
-    if _reranker is None:
-        from src.onnx_reranker import OnnxReranker
-
-        _reranker = OnnxReranker(ONNX_DIR, ONNX_MODEL)
-    return _reranker
-
-
-@modal.web_endpoint(method="POST")
-def _rerank(request):
-    from src.onnx_reranker import RerankRequest
-
-    data = request.json
-    reranker = _load_reranker()
-    payload = RerankRequest(
-        query=data["query"],
-        documents=data["documents"],
-        top_n=data.get("top_n", 5),
-        instruction=data.get("instruction"),
-    )
-    return {"results": reranker.rerank(payload)}
-
-
-@app.function(
+@app.cls(
     image=image,
     cpu=modal.cpu.CPU(4),
+    memory=4096,
     volumes={str(ONNX_DIR): onnx_volume},
-    concurrency_limit=8,
+    max_containers=20,
+    min_containers=0,
+    buffer_containers=1,
+    scaledown_window=300,
 )
-@modal.web_endpoint(method="POST")
-def rerank(request):
-    return _rerank(request)
+class OnnxRerankService:
+    @modal.enter()
+    def setup(self):
+        from src.onnx_reranker import OnnxReranker
 
+        self.reranker = OnnxReranker(ONNX_DIR, ONNX_MODEL)
 
-@app.function(image=image, cpu=modal.cpu.CPU(1))
-@modal.web_endpoint(method="GET")
-def health():
-    return {"status": "ok"}
+    @modal.web_endpoint(method="POST")
+    @modal.concurrent(max_inputs=8, target_inputs=6)
+    def rerank(self, request):
+        from src.onnx_reranker import RerankRequest
+
+        data = request.json
+        payload = RerankRequest(
+            query=data["query"],
+            documents=data["documents"],
+            top_n=data.get("top_n", 5),
+            instruction=data.get("instruction"),
+        )
+        return {"results": self.reranker.rerank(payload)}
+
+    @modal.web_endpoint(method="GET")
+    def health(self):
+        return {"status": "ok"}
