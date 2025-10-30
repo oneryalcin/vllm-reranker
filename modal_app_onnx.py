@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 import modal
-from pydantic import BaseModel
 
 MODEL_ID = "mixedbread-ai/mxbai-rerank-base-v2"
 ONNX_DIR = Path("/root/onnx")
@@ -67,14 +66,14 @@ class OnnxRerankService:
         self.reranker = OnnxReranker(ONNX_DIR, ONNX_MODEL)
 
     @modal.fastapi_endpoint(method="POST")
-    async def rerank(self, payload: "_RerankBody"):
+    async def rerank(self, payload: Dict[str, Any]):
         from src.onnx_reranker import RerankRequest
 
         payload = RerankRequest(
-            query=payload.query,
-            documents=payload.documents,
-            top_n=payload.top_n,
-            instruction=payload.instruction,
+            query=payload["query"],
+            documents=payload["documents"],
+            top_n=payload.get("top_n", 5),
+            instruction=payload.get("instruction"),
         )
         return {"results": self.reranker.rerank(payload)}
 
