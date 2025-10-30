@@ -47,6 +47,33 @@ documents = [
 print(model.rank(query, documents, return_documents=True, top_k=3))
 ```
 
+ONNX CPU Path
+- Export to ONNX (downloads the HF model):
+  ```bash
+  uv run --with optimum[onnxruntime] --with transformers --with torch \
+    python scripts/export_onnx.py \
+      --model-id mixedbread-ai/mxbai-rerank-base-v2 \
+      --out-dir onnx/mxbai-base
+  ```
+- Optional dynamic int8 quantization:
+  ```bash
+  uv run --with onnxruntime --with onnxruntime-tools \
+    python scripts/quantize_onnx.py \
+      --model-path onnx/mxbai-base/model.onnx \
+      --out-path onnx/mxbai-base/model-int8.onnx
+  ```
+- CPU inference:
+  ```bash
+  uv run --with onnxruntime --with transformers \
+    python src/run_onnx.py \
+      --query "Who wrote 'To Kill a Mockingbird'?" \
+      --docs-file data/hf_harper_lee.json \
+      --model-dir onnx/mxbai-base \
+      --model-file model-int8.onnx \
+      --top-k 3
+  ```
+  Set `--model-file model.onnx` to compare fp16 vs int8 models. Results mirror the JSON structure produced by the local wrapper.
+
 vLLM Reranker (Local)
 vLLM supports cross-encoder rerankers and exposes `/v1/rerank`. The Mixedbread v2 model requires `--hf-overrides` to map the classifier correctly.
 

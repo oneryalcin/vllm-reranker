@@ -18,6 +18,7 @@ venv/
 /data/*.md
 data/bench/
 beir/
+onnx/
 
 # Modal volumes (mounted paths)
 /root/.cache/huggingface/
