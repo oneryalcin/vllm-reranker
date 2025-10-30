@@ -42,6 +42,8 @@ async def sample_metrics(host: str, interval: float, stop_event: asyncio.Event) 
     pattern_util = re.compile(r"nvml_gpu_utilization\{[^}]*\}\s+(\d+(?:\.\d+)?)")
     pattern_mem = re.compile(r"nvml_memory_used_bytes\{[^}]*\}\s+(\d+(?:\.\d+)?)")
 
+    last_error: Optional[str] = None
+
     async with httpx.AsyncClient(timeout=10.0) as client:
         while not stop_event.is_set():
             try:
@@ -55,8 +57,9 @@ async def sample_metrics(host: str, interval: float, stop_event: asyncio.Event) 
                         "util": sum(utils) / len(utils) if utils else None,
                         "mem": sum(mems) / len(mems) if mems else None,
                     })
-            except Exception:
-                pass
+                last_error = None
+            except Exception as exc:
+                last_error = str(exc)
 
             try:
                 await asyncio.wait_for(stop_event.wait(), timeout=interval)
@@ -64,7 +67,7 @@ async def sample_metrics(host: str, interval: float, stop_event: asyncio.Event) 
                 continue
 
     if not samples:
-        return {}
+        return {"error": last_error or "No metrics samples collected"}
 
     util_values = [s["util"] for s in samples if s.get("util") is not None]
     mem_values = [s["mem"] for s in samples if s.get("mem") is not None]
