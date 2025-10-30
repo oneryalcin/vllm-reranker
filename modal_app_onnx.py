@@ -35,8 +35,8 @@ image = (
         "torch",
         "fastapi[standard]",
     )
-    .add_local_dir("scripts", "/root/app/scripts")
-    .add_local_dir("src", "/root/app/src")
+    .add_local_dir("scripts", "/root/app/scripts", copy=True)
+    .add_local_dir("src", "/root/app/src", copy=True)
     .env({"PYTHONPATH": "/root/app"})
     .run_function(build_onnx, volumes={str(ONNX_DIR): onnx_volume})
 )
